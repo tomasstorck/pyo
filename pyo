@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Made available by Tomas Storck (tomasvandenooijevaer@gmail.com) under the GPL v3 license. Visit github.com/tomasstorck/pyo for more information.
+# Last update: 19 June 2014
+
+############
+# Settings #
+############
+# TODO: Move settings to separate file
+Nrecent = 50                                                                        # Number of recent commands to save
+dmenu_args = [                                                                      # Add more arguments if you wish
+              '-b',                                                                 # Show dmenu at the bottom of the screen
+              '-p', 'command:',                                                     # Text to show as prompt
+              '-nb', '#111111',                                                     # Non-selection items, background colour
+              '-nf', '#aaaaaa',                                                     # Non-selection items, foreground colour
+              '-sb', '#aa5533',                                                     # Selection, background colour
+              '-sf', '#cccccc',                                                     # Selection, foreground colour
+              '-l', str(10),                                                        # Length of list to show, in number of lines
+              '-fn', '-monotype-courier new-medium-r-normal-*-12-*-*-*-*-*-*-*'     # Font to use, use xfontsel to find this selection
+              ]
+###########
+
+import os
+import sys
+import subprocess
+import time
+import pickle
+
+###########
+
+def buildFiles():
+    # TODO: split up databases
+    # TODO: implement option to select a handful of databases
+    t0 = time.time();
+    # Initialise empty database
+    filesDB = {}
+    print("updating file system database...")
+    
+    # Walk through programs in /bin, compile database
+    for root, dirs, files in os.walk('/bin/', topdown=True):
+        for f in files:
+            filesDB[f] = os.path.join(root, f)
+    
+    # Walk recursively through files in home, compile database
+    for root, dirs, files in os.walk('/home/tomas/', topdown=True):
+        # Filter out the unwanted directories
+        for d in dirs[:]:                                               # dirs[:] to make a copy of dirs
+            if    '.' in d    or    'git' in d:
+                dirs.remove(d)
+        # Loop through these files and append if interesting
+        for f in files:
+            if f[0] == '.':
+                continue
+            if '~' in f   or   '.h' in f   or   '.c' in f   or   '.cpp' in f:
+                continue
+            # Still here, then add to database
+            filesDB[f] = ['xdg-open', os.path.join(root, f)]
+    
+    print("updated database in " + str(round(time.time()-t0,3))  + " s")
+
+    return filesDB
+
+###########
+
+def saveFiles(filesDB):
+    t0 = time.time();
+    with open(DBDir+'/pyoFiles.pkl', 'wb') as fid:                      # w = write, b = binary
+        print("saved file system database in " + str(round(time.time()-t0,3))  + " s")
+        pickle.dump(filesDB, fid, pickle.HIGHEST_PROTOCOL)              # Python 3 will choose whether to use pure Python pickle or cPickle
+
+
+###########
+
+def loadFiles():
+    t0 = time.time()
+    try:
+        with open(DBDir+'/pyoFiles.pkl', 'rb') as fid:                  # r = read, b = binary
+            filesDB = pickle.load(fid)
+    except IOError as e:
+        raise e from FileNotFoundError("Could not find file system database, generate using \'pyo -u\'")
+    print("loaded file system database in " + str(round(time.time()-t0,3)) + " s" )
+    return filesDB
+        
+
+###########
+
+def saveRecent(recentDB):
+    t0 = time.time();
+    with open(DBDir+'/pyoRecent.pkl', 'wb') as fid:                     # w = write, b = binary
+        pickle.dump(recentDB, fid, pickle.HIGHEST_PROTOCOL)
+    print("saved recent database in " + str(round(time.time()-t0,3))  + " s")
+
+###########
+
+def loadRecent():
+    t0 = time.time();
+    try:
+        with open(DBDir+'/pyoRecent.pkl', 'rb') as fid:                 # r = read, b = binary
+            recentDB = pickle.load(fid)
+    except IOError:
+        print("WARNING: Could not find recent database, using empty database")
+        return []
+    print("loaded recent database in " + str(round(time.time()-t0,3)) + " s" )
+    return recentDB
+
+###########
+
+def appendRecentIfNeeded(cmd, recentDB,filesDB):
+    # See if we should append the chosen key to recent
+    append = True
+    if cmd == '':
+        append = False
+    for i in range(len(recentDB)):
+        r = recentDB[i]
+        if cmd == r:
+            recentDB.pop(i)                                             # we'll add it again in the next step
+            break                                                       # there is only one command, so no point continuing
+    
+    # Append if needed
+    if append:
+        Npop = len(recentDB)+1 - Nrecent
+        for i in range(Npop):
+            recentDB.pop(0)                                             # Pop oldest key
+        recentDB.append(cmd)
+        saveRecent(recentDB)
+
+###########
+
+def builddmenu(filesDB, recentDB=['']):
+    t0 = time.time()
+    
+    # Build bash echo string
+    echoStr = ''
+    for k in recentDB[::-1]:
+        echoStr += k+'\n'
+
+    keys = list(filesDB.keys())
+    keys.sort()
+    for k in keys:
+        if not k in recentDB:
+            echoStr += k+'\n'
+    
+    print("built dmenu input in " + str(round(time.time()-t0,3)) + " s")
+
+    return echoStr
+
+###########
+
+def calldmenu(echoStr):
+    # Communicate with dmenu through the shell
+    p = subprocess.Popen(['dmenu'] + dmenu_args,                        # Concatenate dmenu with its arguments
+                          stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    stdout, stderr = p.communicate(input=echoStr.encode())              # Call subprocess, piping in the bytes version of the menu input
+    cmd = stdout.strip().decode()                                       # Decode to go from bytes --> str
+    
+    # Work through command returned by dmenu
+    if cmd=='':
+        print("Stopped without command")
+    elif cmd in filesDB:
+        subprocess.Popen(filesDB[cmd], stdin=None, stdout=None, stderr=None)
+    else:
+        # Convert command to an array
+        cmdArray = cmd.split(' ')
+        cmdArrayProc = cmdArray[:]                                      # copy cmdArray so we can make the changes in there
+        # Find out if there is a key in the given command. No worries if not
+        for i in range(len(cmdArray)):
+            c = cmdArray[i]
+            if c in filesDB:
+                cmdArrayProc[i] = filesDB[c]
+        # Now execute the processed command
+        subprocess.Popen(cmdArrayProc, stdin=None, stdout=None, stderr=None)
+
+    return cmd
+
+######################
+
+# Get database directory
+DBDir = os.path.expanduser('~') + "/.cache/pyo"
+
+# Analyse input arguments
+if len(sys.argv) == 1:
+    sys.argv.append('-o')                                               # Set default. TODO: is this very bad practice?
+for a in sys.argv[1:]:
+    if a in ['-o', '--open']:
+        # load existing databases, create dmenu and append to recent
+        filesDB = loadFiles()
+        recentDB = loadRecent()
+        echoStr = builddmenu(filesDB, recentDB)
+        cmd = calldmenu(echoStr)
+        appendRecentIfNeeded(cmd, recentDB,filesDB)
+    elif a in ['-u', '--update']:
+        # build and save file system database
+        filesDB = buildFiles()
+        saveFiles(filesDB)
+    elif a in ['--dummy']:
+        # define empty, dummy databases
+        print("creating dummy databases" )
+        filesDB = {}
+        recentDB = ['']
+        saveFiles(filesDB)
+        saveRecent(recentDB)
+    elif a in ['-h', '--help']:
+        # show help information
+        print("Usage: pyo [arguments]")
+        print("Search for and open a file or program using dmenu")
+        print("")
+        print("Argument         Function")
+        print(" -o, --open       Start pyo, using existing databases")
+        print(" -u, --update     Update and overwrite existing files database")
+        print(" -h, --help       Show this information")
+        print(" --dummy          Create and save empty files and recent databases")
+        print("")
+        print("Examples:")
+        print(" pyo             Start pyo. Same as pyo -s")
+        print(" pyo -o -u       Start pyo, using existing database. After opening the specified file, update the files database")
+        print("")
+        print("Databases are stored in $HOME/.cache/pyo/")
+        print("Settings can be changed by editing the pyo Python script.")
+        print("Note that key binding is NOT handled by pyo. You can set up your window manager for this")
+    else:
+        print("Invalid argument, \'" + a + "\', ignored")
