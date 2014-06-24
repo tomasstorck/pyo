@@ -22,6 +22,7 @@ dmenu_args = [                                                                  
               
 dirNameBlacklist = ['.', 'git']                                                     # Directory names containing anything from this list will not be searched through for filesDB
 fileNameBlacklist = ['~', '.h', '.c', '.cpp']                                       # File names containing anything from this list OR start with . will not be searched through for filesDB
+
 ###########
 
 import os
@@ -41,7 +42,7 @@ def buildFiles():
     print("updating file system database...")
     
     # Walk through programs in /bin, compile database
-    for root, dirs, files in os.walk('/bin/', topdown=True):
+    for root, dirs, files in os.walk('/usr/bin/', topdown=True, followlinks=True):
         for f in files:
             filesDB[f] = os.path.join(root, f)
     
@@ -77,7 +78,6 @@ def loadFiles():
         with open(DBDir+'/pyoFiles.pkl', 'rb') as fid:                  # r = read, b = binary
             filesDB = pickle.load(fid)
     except IOError as e:
-        # TODO code below returns an error, should be fixed
         raise e from FileNotFoundError("Could not find file system database, generate using \'pyo -u\'")
     print("loaded file system database in " + str(round(time.time()-t0,3)) + " s" )
     return filesDB
