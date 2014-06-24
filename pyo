@@ -212,7 +212,7 @@ while i<len(sys.argv):
         # define empty, dummy databases
         print("creating dummy databases" )
         filesDB = {}
-        recentDB = ['']
+        recentDB = []
         saveFiles(filesDB)
         saveRecent(recentDB)
     # show help information
