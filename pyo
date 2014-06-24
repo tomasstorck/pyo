@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 # Made available by Tomas Storck (tomasvandenooijevaer@gmail.com) under the GPL v3 license. Visit github.com/tomasstorck/pyo for more information.
-# Last update: 19 June 2014
 
 ############
 # Settings #
@@ -72,14 +71,16 @@ def saveFiles(filesDB):
 
 ###########
 
-def loadFiles():
-    t0 = time.time()
-    try:
-        with open(DBDir+'/pyoFiles.pkl', 'rb') as fid:                  # r = read, b = binary
-            filesDB = pickle.load(fid)
-    except IOError as e:
-        raise e from FileNotFoundError("Could not find file system database, generate using \'pyo -u\'")
-    print("loaded file system database in " + str(round(time.time()-t0,3)) + " s" )
+def loadFiles(DBName=['pyoFiles']):
+    filesDB = {}
+    for db in DBName:
+        t0 = time.time()
+        try:
+            with open(DBDir + '/' + db + '.pkl', 'rb') as fid:                  # r = read, b = binary
+                filesDB.update(pickle.load(fid))                        # TODO: this method might be slow
+        except IOError as e:
+            raise e from FileNotFoundError("Could not find file system database, generate using \'pyo -u\'")
+        print("loaded \'" + db + "\' database in " + str(round(time.time()-t0,3)) + " s" )
     return filesDB
         
 
@@ -101,7 +102,7 @@ def loadRecent():
     except IOError:
         print("WARNING: Could not find recent database, using empty database")
         return []
-    print("loaded recent database in " + str(round(time.time()-t0,3)) + " s" )
+    print("loaded \'recent\' database in " + str(round(time.time()-t0,3)) + " s" )
     return recentDB
 
 ###########
@@ -181,18 +182,32 @@ DBDir = os.path.expanduser('~') + "/.cache/pyo"
 # Analyse input arguments
 if len(sys.argv) == 1:
     sys.argv.append('-o')                                               # Set default. TODO: is this very bad practice?
-for a in sys.argv[1:]:
+i=1
+while i<len(sys.argv):
+    a = sys.argv[i]
+    # load existing databases, create dmenu and append to recent (default)
     if a in ['-o', '--open']:
-        # load existing databases, create dmenu and append to recent
-        filesDB = loadFiles()
+        # Load specified databases
+        iLast = i+1 + next((j for j,a2 in enumerate(sys.argv[i+1:]+['-']) if a2[0]=='-'), 0)        # TODO '-' appended so that iterator stops at end of the list as workaround. Needs to be distinguishable from '-o' is last argument
+        DBName = sys.argv[i+1:iLast]
+        print(len(DBName))
+        if DBName:
+            filesDB = loadFiles(DBName)
+        else:
+            filesDB = loadFiles()
+        i = iLast
+        # Continue creating dmenu and appending to recent
         recentDB = loadRecent()
         echoStr = builddmenu(filesDB, recentDB)
-        cmd = calldmenu(echoStr)
+        cmd = calldmenu(echoStr)        # TODO mention what has been selected
         appendRecentIfNeeded(cmd, recentDB,filesDB)
+        # Push index forward
+        
+    # build and save file system database
     elif a in ['-u', '--update']:
-        # build and save file system database
         filesDB = buildFiles()
         saveFiles(filesDB)
+    # build and save file system database
     elif a in ['--dummy']:
         # define empty, dummy databases
         print("creating dummy databases" )
@@ -200,23 +215,26 @@ for a in sys.argv[1:]:
         recentDB = ['']
         saveFiles(filesDB)
         saveRecent(recentDB)
+    # show help information
     elif a in ['-h', '--help']:
-        # show help information
         print("Usage: pyo [arguments]")
         print("Search for and open a file or program using dmenu")
         print("")
-        print("Argument         Function")
-        print(" -o, --open       Start pyo, using existing databases")
-        print(" -u, --update     Update and overwrite existing files database")
-        print(" -h, --help       Show this information")
-        print(" --dummy          Create and save empty files and recent databases")
+        print("Argument                                Function")
+        print(" -o db1 ..., --open db1 ...             Start pyo, using existing databases (defaults to pyoFiles)")
+        print(" -u, --update                            Update and overwrite existing files database")
+        print(" -h, --help                              Show this information")
+        print(" --dummy                                 Create and save empty files and recent databases")
         print("")
         print("Examples:")
-        print(" pyo             Start pyo. Same as pyo -s")
-        print(" pyo -o -u       Start pyo, using existing database. After opening the specified file, update the files database")
+        print(" pyo                                     Start pyo. Same as pyo -s")
+        print(" pyo -o -u                               Start pyo, using existing database. After opening the specified file, update the files database")
         print("")
         print("Databases are stored in $HOME/.cache/pyo/")
         print("Settings can be changed by editing the pyo Python script.")
         print("Note that key binding is NOT handled by pyo. You can set up your window manager for this")
+        # Still here, then something went wrong    
     else:
         print("Invalid argument, \'" + a + "\', ignored")
+    # set index for next iteration
+    i+=1 
