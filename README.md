@@ -14,7 +14,7 @@ Before you start, make sure you have all dependencies installed:
 * Python 3
 * dmenu
 
-Besides these dependencies, only the file pyo is required to run. Put it somewhere in your $PATH. Don't forget to make it executable.
+Besides these dependencies, only the file pyo is required to run. Put it in a folder that is in your $PATH. Don't forget to make it executable.
 
 You should now be able to run pyo. By running it in the terminal you'll get feedback on its performance and what is going on. Assuming you have not used this program before, there will be no databases available and you'll get an error. Generate empty databases and update the file system database by running in a terminal:
 
@@ -26,7 +26,14 @@ LXQT:   Open the global key configuration screen (e.g., run lxqt-config-globalke
 The command you want to bind a shortcut key to depends on you. For example, you could do a database update every time after pyo finishes, by using:
 
     pyo -o -u
-    
+
+###################
+# Tricks and tips #
+###################
+1.  The script is quite customisable: just open the file in a text editor and change your settings in the configuration section
+2.  You can add arguments to the selected entry. Press TAB to fill in the selected item, add your extra arguments and  press ENTER. For example, to use interactive mode for gnome-screenshot, type "screens", press TAB, type " -i". This entry is automatically stored in the recent database
+3.  Use SHIFT+ENTER to execute the command as entered, not filling in the selected item
+
 ###########
 # License #
 ###########
