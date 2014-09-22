@@ -47,7 +47,7 @@ def buildFiles():
             filesDB[f] = os.path.join(root, f)
 
     # Walk recursively through files in home, compile database
-    for root, dirs, files in os.walk('/home/tomas/', topdown=True):
+    for root, dirs, files in os.walk('~/', topdown=True):
         # Filter out the unwanted directories
         for d in dirs[:]:  # dirs[:] to make a copy of dirs
             if any(bl in d for bl in dirNameBlacklist):
