@@ -177,13 +177,16 @@ def calldmenu(echoStr):
     else:
         # Convert command to an array
         cmdArray = cmd.split(' ')
-        cmdArrayProc = cmdArray[:]  # copy cmdArray so we can make the changes in there
+        cmdArrayProc = []  # copy cmdArray so we can make the changes in there
         # Find out if there is a key in the given command. No worries if not, then it's just an argument
         for i in range(len(cmdArray)):
             c = cmdArray[i]
             if c in filesDB:
-                cmdArrayProc[i] = filesDB[c]
+                cmdArrayProc.append(*filesDB[c])
+            else:
+                cmdArrayProc.append(c)
         # Now execute the processed command
+        print(cmdArrayProc)
         subprocess.Popen(cmdArrayProc, stdin=None, stdout=None, stderr=None)
 
     return cmd
