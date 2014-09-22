@@ -34,15 +34,20 @@ import pickle
 
 ###########
 
+# Load a few commonly used variables
+homeDir = os.path.expanduser('~')
+DBDir = homeDir + "/.cache/pyo"
+
+###########
+
 def buildFiles(pathArray):
     t0 = time.time()
     # Initialise empty database
     filesDB = {}
-    print("updating file system database...")
+    print("updating 'files' database...")
 
     for p in pathArray:
-        print(p)
-        # Walk recursively through files in home, compile database
+        # Walk recursively through files in pathArray, compile database
         for root, dirs, files in os.walk(p, topdown=True):
             # Filter out the unwanted directories
             for d in dirs[:]:  # dirs[:] to make a copy of dirs
@@ -57,7 +62,7 @@ def buildFiles(pathArray):
                     else:
                         filesDB[f] = ['xdg-open', os.path.join(root, f)]
 
-    print("updated database in " + str(round(time.time() - t0, 3)) + " s")
+    print("updated 'files' database in " + str(round(time.time() - t0, 3)) + " s")
 
     return filesDB
 
@@ -67,23 +72,22 @@ def buildFiles(pathArray):
 def saveFiles(filesDB, DBName='pyoFiles'):
     t0 = time.time()
     with open(DBDir + '/' + DBName + '.pkl', 'wb') as fid:  # w = write, b = binary
-        print("saved file system database in " + str(round(time.time() - t0, 3)) + " s")
+        print("saved 'files' database in " + str(round(time.time() - t0, 3)) + " s")
         pickle.dump(filesDB, fid,
                     pickle.HIGHEST_PROTOCOL)  # Python 3 will choose whether to use pure Python pickle or cPickle
 
 
 ###########
 
-def loadFiles(DBNames=['pyoFiles']):
+def loadFiles():
+    t0 = time.time()
     filesDB = {}
-    for db in DBNames:
-        t0 = time.time()
-        try:
-            with open(DBDir + '/' + db + '.pkl', 'rb') as fid:  # r = read, b = binary
-                filesDB.update(pickle.load(fid))  # TODO: this method might be slow
-        except IOError as e:
-            raise e from FileNotFoundError("Could not find file system database, generate using \'pyo -u\'")
-        print("loaded \'" + db + "\' database in " + str(round(time.time() - t0, 3)) + " s")
+    try:
+        with open(DBDir + '/pyoFiles.pkl', 'rb') as fid:  # r = read, b = binary
+            filesDB = pickle.load(fid)
+    except IOError as e:
+        raise e from FileNotFoundError("Could not find file system database, generate using \'pyo -u\'")
+    print("loaded 'files' database in " + str(round(time.time() - t0, 3)) + " s")
     return filesDB
 
 
@@ -93,7 +97,7 @@ def saveRecent(recentDB):
     t0 = time.time()
     with open(DBDir + '/pyoRecent.pkl', 'wb') as fid:  # w = write, b = binary
         pickle.dump(recentDB, fid, pickle.HIGHEST_PROTOCOL)
-    print("saved recent database in " + str(round(time.time() - t0, 3)) + " s")
+    print("saved 'recent' database in " + str(round(time.time() - t0, 3)) + " s")
 
 
 ###########
@@ -106,13 +110,14 @@ def loadRecent():
     except IOError:
         print("WARNING: Could not find recent database, using empty database")
         return []
-    print("loaded \'recent\' database in " + str(round(time.time() - t0, 3)) + " s")
+    print("loaded 'recent' database in " + str(round(time.time() - t0, 3)) + " s")
     return recentDB
 
 
 ###########
 
-def appendRecentIfNeeded(cmd, recentDB, filesDB):
+def appendRecentIfNeeded(cmd, recentDB):
+    t0 = time.time()
     # See if we should append the chosen key to recent
     append = True
     if cmd == '':
@@ -129,8 +134,9 @@ def appendRecentIfNeeded(cmd, recentDB, filesDB):
         for i in range(Npop):
             recentDB.pop(0)  # Pop oldest key
         recentDB.append(cmd)
+        print("updated 'recent' database in " + str(round(time.time() - t0, 3)) + " s")
         saveRecent(recentDB)
-
+    
 
 ###########
 
@@ -172,7 +178,7 @@ def calldmenu(echoStr):
         # Convert command to an array
         cmdArray = cmd.split(' ')
         cmdArrayProc = cmdArray[:]  # copy cmdArray so we can make the changes in there
-        # Find out if there is a key in the given command. No worries if not
+        # Find out if there is a key in the given command. No worries if not, then it's just an argument
         for i in range(len(cmdArray)):
             c = cmdArray[i]
             if c in filesDB:
@@ -184,41 +190,27 @@ def calldmenu(echoStr):
 
 ######################
 
-# Get database directory
-homeDir = os.path.expanduser('~')
-DBDir = homeDir + "/.cache/pyo"
-
 # Analyse input arguments
 i = 1
 while True:
     # load existing databases, create dmenu and append to recent (default)
     if len(sys.argv) == 1 or sys.argv[i] in ['-o', '--open']:
         # Load specified databases
-        iLast = i + 1 + next((j for j, a2 in enumerate(sys.argv[i + 1:] + ['-']) if a2[0] == '-'),
-                             0)     # TODO '-' appended so that iterator stops at end of the list as workaround. Needs to be distinguishable from '-o' is last argument
-        DBName = sys.argv[i + 1:iLast]
-        if DBName:
-            filesDB = loadFiles(DBName)
-        else:
-            filesDB = loadFiles()
-        i = iLast
+        filesDB = loadFiles()
         # Continue creating dmenu and appending to recent
         recentDB = loadRecent()
         echoStr = builddmenu(filesDB, recentDB)
         cmd = calldmenu(echoStr)  # TODO mention what has been selected
-        appendRecentIfNeeded(cmd, recentDB, filesDB)
-        # Push index forward
+        appendRecentIfNeeded(cmd, recentDB)
 
     # build and save file system database
     elif sys.argv[i] in ['-u', '--update']:
         pathArray = []
         while i+1 < len(sys.argv) and not sys.argv[i+1][0] == '-':
             pathArray.append(sys.argv[i+1])
-            print('appended'+sys.argv[i+1])
             i += 1
-        if pathArray == []:
-            pathArray = [os.path.expanduser('~'), '/usr/bin']
-        print(len(pathArray))
+        if pathArray == []:                         # Use default pathArray if otherwise empty
+            pathArray = [homeDir, '/usr/bin']
         filesDB = buildFiles(pathArray)
         saveFiles(filesDB)
     # build and save recent system database
@@ -232,22 +224,21 @@ while True:
         print("Usage: pyo [arguments]")
         print("Search for and open a file or program using dmenu")
         print("")
-        print("Argument                                Function")
-        print(" -o, --open db1 [db2 ...]                Start pyo, using whitespace-separated list of databases (defaults to pyoFiles)")
-        print(" -u, --update dir1 [dir2 ...] database   Save contents of directories as database  (defaults to dir /home/$USER/ and database pyoFiles)")
-        print(" -h, --help                              Show this information")
-        print(" --reset-recent                          Create and save empty recent database")
+        print("Argument                        Function")
+        print(" -o, --open                      Start pyo and commence searching (default)")
+        print(" -u, --update dir1 [dir2 ...]    Save contents of directories as database")
+        print(" -h, --help                      Show this information")
+        print(" --reset-recent                  Create and save empty recent database. Useful if database became corrupted")
         print("")
         print("Examples:")
-        print(" pyo                                     Start pyo. Same as pyo -o")
-        print(" pyo -o -u                               Start pyo, using existing database. After opening the specified file, update the files database")
+        print(" pyo -o -u                       Start pyo, using existing database. Afterwards, update the files database")
         print("")
-        print("Databases are stored in $HOME/.cache/pyo/")
-        print("Settings can be changed by editing the pyo Python script.")
+        print("Databases are stored in " + DBDir + ".")
         print("Note that key binding is NOT handled by pyo. You can set up your window manager for this")
+        print("See github.com/tomasstorck/pyo for details")
     # Still here, then something went wrong    
     else:
-        print("Invalid argument, \'" + sys.argv[i] + "\', ignored")  # TODO make error?
+        print("Invalid argument, '" + sys.argv[i] + "', ignored")  # TODO make error?
     # prepare for next iteration
     if i+1 >= len(sys.argv):
         break
