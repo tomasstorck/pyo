@@ -40,26 +40,22 @@ def buildFiles():
     filesDB = {}
     print("updating file system database...")
 
-    # TODO make below two walks into a single for loop
-    # Walk through programs in /bin, compile database
-    for root, dirs, files in os.walk('/usr/bin/', topdown=True):
-        for f in files:
-            filesDB[f] = os.path.join(root, f)
-
-    # Walk recursively through files in home, compile database
-    for root, dirs, files in os.walk('~/', topdown=True):
-        # Filter out the unwanted directories
-        for d in dirs[:]:  # dirs[:] to make a copy of dirs
-            if any(bl in d for bl in dirNameBlacklist):
-                dirs.remove(d)
-        # Loop through these files and append if interesting
-        for f in files[:]:
-            if not f[0] == '.' and not any(bl in f for bl in fileNameBlacklist):
-                # See if file is executable. Store as script if so, as file otherwise (using xdg-open)
-                if os.access(os.path.join(root, f), os.X_OK):
-                    filesDB[f] = [os.path.join(root, f)]
-                else:
-                    filesDB[f] = ['xdg-open', os.path.join(root, f)]
+    pathArray = ['~/', '/usr/bin']
+    for p in pathArray:
+        # Walk recursively through files in home, compile database
+        for root, dirs, files in os.walk(p, topdown=True):
+            # Filter out the unwanted directories
+            for d in dirs[:]:  # dirs[:] to make a copy of dirs
+                if any(bl in d for bl in dirNameBlacklist):
+                    dirs.remove(d)
+            # Loop through these files and append if interesting (does not start with . and is not in blacklist)
+            for f in files[:]:
+                if not f[0] == '.' and not any(bl in f for bl in fileNameBlacklist):
+                    # See if file is executable. Store as script if so, as file otherwise (using xdg-open)
+                    if os.access(os.path.join(root, f), os.X_OK):
+                        filesDB[f] = [os.path.join(root, f)]
+                    else:
+                        filesDB[f] = ['xdg-open', os.path.join(root, f)]
 
     print("updated database in " + str(round(time.time() - t0, 3)) + " s")
 
