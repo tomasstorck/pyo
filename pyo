@@ -34,14 +34,14 @@ import pickle
 
 ###########
 
-def buildFiles():
+def buildFiles(pathArray):
     t0 = time.time()
     # Initialise empty database
     filesDB = {}
     print("updating file system database...")
 
-    pathArray = ['~/', '/usr/bin']
     for p in pathArray:
+        print(p)
         # Walk recursively through files in home, compile database
         for root, dirs, files in os.walk(p, topdown=True):
             # Filter out the unwanted directories
@@ -211,8 +211,15 @@ while True:
 
     # build and save file system database
     elif sys.argv[i] in ['-u', '--update']:
-        # TODO read in folders as above
-        filesDB = buildFiles()
+        pathArray = []
+        while i+1 < len(sys.argv) and not sys.argv[i+1][0] == '-':
+            pathArray.append(sys.argv[i+1])
+            print('appended'+sys.argv[i+1])
+            i += 1
+        if pathArray == []:
+            pathArray = [os.path.expanduser('~'), '/usr/bin']
+        print(len(pathArray))
+        filesDB = buildFiles(pathArray)
         saveFiles(filesDB)
     # build and save recent system database
     elif sys.argv[i] in ['--reset-recent']:
