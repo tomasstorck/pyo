@@ -55,7 +55,11 @@ def buildFiles():
         # Loop through these files and append if interesting
         for f in files[:]:
             if not f[0] == '.' and not any(bl in f for bl in fileNameBlacklist):
-                filesDB[f] = ['xdg-open', os.path.join(root, f)]
+                # See if file is executable. Store as script if so, as file otherwise (using xdg-open)
+                if os.access(os.path.join(root, f), os.X_OK):
+                    filesDB[f] = [os.path.join(root, f)]
+                else:
+                    filesDB[f] = ['xdg-open', os.path.join(root, f)]
 
     print("updated database in " + str(round(time.time() - t0, 3)) + " s")
 
