@@ -31,12 +31,14 @@ import sys
 import subprocess
 import time
 import pickle
+import argparse
 
 ###########
 
 # Load a few commonly used variables
 homeDir = os.path.expanduser('~')
 DBDir = homeDir + "/.cache/pyo"
+defaultPathArray = [homeDir, '/usr/bin']
 
 ###########
 
@@ -194,10 +196,19 @@ def calldmenu(echoStr):
 ######################
 
 # Analyse input arguments
-i = 1
-while True:
-    # load existing databases, create dmenu and append to recent (default)
-    if len(sys.argv) == 1 or sys.argv[i] in ['-o', '--open']:
+parser = argparse.ArgumentParser(description="Search for and open a file or program using dmenu", 
+                                 epilog="See github.com/tomasstorck/pyo for details.")
+parser.add_argument('-o', 
+                    help = "start pyo and commence searching (default)",
+                    action = 'store_true')
+parser.add_argument('-u', metavar='PATH',
+                    help = "save contents of specified paths into database (" + ", ".join(defaultPathArray) + " unless specified)",
+                    nargs = '*')
+parserArgs = parser.parse_args()
+
+# However, we walk through sys.argv to maintain the order instead of using the parser
+for arg in sys.argv:
+    if len(sys.argv) == 1 or arg in ['-o']:
         # Load specified databases
         filesDB = loadFiles()
         # Continue creating dmenu and appending to recent
@@ -207,43 +218,15 @@ while True:
         appendRecentIfNeeded(cmd, recentDB)
 
     # build and save file system database
-    elif sys.argv[i] in ['-u', '--update']:
-        pathArray = []
-        while i+1 < len(sys.argv) and not sys.argv[i+1][0] == '-':
-            pathArray.append(sys.argv[i+1])
-            i += 1
+    elif arg in ['-u']:
+        pathArray = parserArgs.u
         if pathArray == []:                         # Use default pathArray if otherwise empty
-            pathArray = [homeDir, '/usr/bin']
+            pathArray = defaultPathArray
         filesDB = buildFiles(pathArray)
         saveFiles(filesDB)
     # build and save recent system database
-    elif sys.argv[i] in ['--reset-recent']:
+    elif arg in ['--reset-recent']:
         # define empty, dummy database
         print("creating dummy recent database")
         recentDB = []
         saveRecent(recentDB)
-    # show help information
-    elif sys.argv[i] in ['--help']:
-        print("Usage: pyo [arguments]")
-        print("Search for and open a file or program using dmenu")
-        print("")
-        print("Argument                        Function")
-        print(" -o, --open                      Start pyo and commence searching (default)")
-        print(" -u, --update dir1 [dir2 ...]    Save contents of directories as database")
-        print(" --help                          Show this information")
-        print(" --reset-recent                  Create and save empty recent database. Useful if database became corrupted")
-        print("")
-        print("Examples:")
-        print(" pyo -o -u                       Start pyo, using existing database. Afterwards, update the files database")
-        print("")
-        print("Databases are stored in " + DBDir + ".")
-        print("Note that key binding is NOT handled by pyo. You can set up your window manager for this")
-        print("See github.com/tomasstorck/pyo for details")
-    # Still here, then something went wrong    
-    else:
-        #print("Invalid argument, '" + sys.argv[i] + "', ignored")
-        sys.exit("Error: invalid argument, '" + " ".join(sys.argv[1:]),"'")
-    # prepare for next iteration
-    if i+1 >= len(sys.argv):
-        sys.exit()
-    i += 1
