@@ -223,14 +223,14 @@ while True:
         recentDB = []
         saveRecent(recentDB)
     # show help information
-    elif sys.argv[i] in ['-h', '--help']:
+    elif sys.argv[i] in ['--help']:
         print("Usage: pyo [arguments]")
         print("Search for and open a file or program using dmenu")
         print("")
         print("Argument                        Function")
         print(" -o, --open                      Start pyo and commence searching (default)")
         print(" -u, --update dir1 [dir2 ...]    Save contents of directories as database")
-        print(" -h, --help                      Show this information")
+        print(" --help                          Show this information")
         print(" --reset-recent                  Create and save empty recent database. Useful if database became corrupted")
         print("")
         print("Examples:")
@@ -241,8 +241,9 @@ while True:
         print("See github.com/tomasstorck/pyo for details")
     # Still here, then something went wrong    
     else:
-        print("Invalid argument, '" + sys.argv[i] + "', ignored")  # TODO make error?
+        #print("Invalid argument, '" + sys.argv[i] + "', ignored")
+        sys.exit("Error: invalid argument, '" + " ".join(sys.argv[1:]),"'")
     # prepare for next iteration
     if i+1 >= len(sys.argv):
-        break
+        sys.exit()
     i += 1
