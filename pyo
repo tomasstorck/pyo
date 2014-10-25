@@ -188,7 +188,6 @@ def calldmenu(echoStr):
             else:
                 cmdArrayProc.append(c)
         # Now execute the processed command
-        print(cmdArrayProc)
         subprocess.Popen(cmdArrayProc, stdin=None, stdout=None, stderr=None)
 
     return cmd
@@ -214,7 +213,8 @@ for arg in sys.argv:
         # Continue creating dmenu and appending to recent
         recentDB = loadRecent()
         echoStr = builddmenu(filesDB, recentDB)
-        cmd = calldmenu(echoStr)  # TODO mention what has been selected
+        cmd = calldmenu(echoStr)
+        print("running '" + cmd + "'")
         appendRecentIfNeeded(cmd, recentDB)
 
     # build and save file system database
