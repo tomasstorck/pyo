@@ -24,7 +24,7 @@ t0 = time.time()
 # Parse configuration file
 config = configparser.ConfigParser(comment_prefixes=(';',), inline_comment_prefixes=(';',))           # Allow comments using ';'. # is reserved for colours
 if config.read(homeDir + "/.config/pyo/settings") == []:
-    raise FileNotFoundError("Configuration file does not exist, download using e.g. 'wget https://github.com/tomasstorck/pyo/raw/master/pyo -O " + homeDir + "/.config/pyo/settings'")
+    raise FileNotFoundError("Configuration file does not exist, download using e.g. 'wget https://github.com/tomasstorck/pyo/raw/master/settings -O " + homeDir + "/.config/pyo/settings'")
 else:
     # TODO: throw error when below settings do not exist (try/catch)
     dmenu_args      = config['dmenu']['arguments'].splitlines()
