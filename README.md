@@ -13,7 +13,7 @@ Before you start, make sure you have all dependencies installed:
 * Python 3
 * dmenu
 
-Besides these dependencies, only the file pyo is required to run. Put it in a folder that is in your `$PATH`. Don't forget to make it executable.
+Besides these dependencies, only the file pyo and settings file are required to run the program. Put pyo in a folder that is in your `$PATH` (don't forget to make it executable) and put the settings file in `~/.config/pyo/`
 
 To summon and use pyo, you'll need to bind it to a shortcut that is globally available. How to add a shortcut key depends on your window manager/desktop environment. Some examples are given below.
 
