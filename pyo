@@ -26,13 +26,15 @@ config = configparser.ConfigParser(comment_prefixes=(';',), inline_comment_prefi
 if config.read(homeDir + "/.config/pyo/settings") == []:
     raise FileNotFoundError("Configuration file does not exist, download using e.g. 'wget https://github.com/tomasstorck/pyo/raw/master/settings -O " + homeDir + "/.config/pyo/settings'")
 else:
-    # TODO: throw error when below settings do not exist (try/catch)
-    dmenu_args      = config['dmenu']['arguments'].splitlines()
-    blacklist_dir   = config['blacklist']['dir'].split()
-    blacklist_file  = config['blacklist']['file'].split()
-    Nrecent         = int(config['other']['Nrecent'])
-    # TODO: throw warning when unused settings are defined
-    print("read configuration file in " + str(round(time.time() - t0, 3)) + " s")
+    try:
+        dmenu_args      = config['dmenu']['arguments'].splitlines()
+        blacklist_dir   = config['blacklist']['dir'].split()
+        blacklist_file  = config['blacklist']['file'].split()
+        Nrecent         = int(config['other']['Nrecent'])
+        # TODO: throw warning when unused settings are defined
+        print("read configuration file in " + str(round(time.time() - t0, 3)) + " s")
+    except KeyError as e:
+        raise KeyError("Missing key or section '" + " ".join(e.args) + "' in configuration file")
 
 ###########
 
