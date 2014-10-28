@@ -3,35 +3,13 @@
 
 # Visit github.com/tomasstorck/pyo for updates and more information.
 
-# ###########
-# Settings #
-############
-# TODO: Move settings to separate file
-Nrecent = 50  # Number of recent commands to save
-dmenu_args = ['-b',  # Show dmenu at the bottom of the screen
-              '-i',  # Ignore case
-              '-p', 'command:',  # Text to show as prompt
-              '-nb', '#111111',  # Non-selection items, background colour
-              '-nf', '#aaaaaa',  # Non-selection items, foreground colour
-              '-sb', '#aa5533',  # Selection, background colour
-              '-sf', '#cccccc',  # Selection, foreground colour
-              '-l',  str(10),  # Length of list to show, in number of lines
-              '-fn',
-              '-monotype-courier new-medium-r-normal-*-12-*-*-*-*-*-*-*']  # Font to use, use xfontsel to find this selection
-
-dirNameBlacklist = ['.',
-                    'git']  # Directory names containing anything from this list will not be searched through for filesDB
-fileNameBlacklist = ['~', '.h', '.c',
-                     '.cpp']  # File names containing anything from this list OR start with . will not be searched through for filesDB
-
-###########
-
 import os
 import sys
 import subprocess
 import time
 import pickle
 import argparse
+import configparser
 
 ###########
 
@@ -39,6 +17,22 @@ import argparse
 homeDir = os.path.expanduser('~')
 DBDir = homeDir + "/.cache/pyo"
 defaultPathArray = [homeDir, '/usr/bin']
+
+###########
+
+t0 = time.time()
+# Parse configuration file
+config = configparser.ConfigParser(comment_prefixes=(';',), inline_comment_prefixes=(';',))           # Allow comments using ';'. # is reserved for colours
+if config.read(homeDir + "/.config/pyo/settings") == []:
+    raise FileNotFoundError("Configuration file does not exist, download using e.g. 'wget https://github.com/tomasstorck/pyo/raw/master/pyo -O " + homeDir + "/.config/pyo/settings'")
+else:
+    # TODO: throw error when below settings do not exist (try/catch)
+    dmenu_args      = config['dmenu']['arguments'].splitlines()
+    blacklist_dir   = config['blacklist']['dir'].split()
+    blacklist_file  = config['blacklist']['file'].split()
+    Nrecent         = int(config['other']['Nrecent'])
+    # TODO: throw warning when unused settings are defined
+    print("read configuration file in " + str(round(time.time() - t0, 3)) + " s")
 
 ###########
 
@@ -53,11 +47,11 @@ def buildFiles(pathArray):
         for root, dirs, files in os.walk(p, topdown=True):
             # Filter out the unwanted directories
             for d in dirs[:]:  # dirs[:] to make a copy of dirs
-                if any(bl in d for bl in dirNameBlacklist):
+                if any(bl in d for bl in blacklist_dir):
                     dirs.remove(d)
             # Loop through these files and append if interesting (does not start with . and is not in blacklist)
             for f in files[:]:
-                if not f[0] == '.' and not any(bl in f for bl in fileNameBlacklist):
+                if not f[0] == '.' and not any(bl in f for bl in blacklist_file):
                     # See if file is executable. Store as script if so, as file otherwise (using xdg-open)
                     if os.access(os.path.join(root, f), os.X_OK):
                         filesDB[f] = [os.path.join(root, f)]
