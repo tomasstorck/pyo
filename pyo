@@ -162,16 +162,19 @@ def builddmenu(filesDB, recentDB=['']):
 def calldmenu(echoStr):
     # Communicate with dmenu through the shell
     p = subprocess.Popen(['dmenu'] + dmenu_args,  # Concatenate dmenu with its arguments
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    stdout, stderr = p.communicate(
-        input=echoStr.encode())  # Call subprocess, piping in the bytes version of the menu input
+                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate(input=echoStr.encode())  # Call subprocess, piping in the bytes version of the menu input
+    stderrStr = stderr.strip().decode()
+    if stderrStr != '':
+        print("WARNING: dmenu returned error, '" + stderrStr + "'")
     cmd = stdout.strip().decode()  # Decode to go from bytes --> str
+    # FileNotFoundError("Cannot run dmenu output '" + " ".join([cmd,]) + "'")
 
     # Work through command returned by dmenu
     if cmd == '':
         print("Stopped without command")
     elif cmd in filesDB:
-        subprocess.Popen(filesDB[cmd], stdin=None, stdout=None, stderr=None)
+        subprocess.Popen(filesDB[cmd], stdin=None, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     else:
         # Convert command to an array
         cmdArray = cmd.split(' ')
@@ -184,8 +187,7 @@ def calldmenu(echoStr):
             else:
                 cmdArrayProc.append(c)
         # Now execute the processed command
-        subprocess.Popen(cmdArrayProc, stdin=None, stdout=None, stderr=None)
-
+        subprocess.Popen(cmdArrayProc, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return cmd
 
 ######################
