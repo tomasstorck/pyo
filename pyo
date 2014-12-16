@@ -201,6 +201,9 @@ parser.add_argument('-o',
 parser.add_argument('-u', metavar='PATH',
                     help = "update 'files' database to index specified paths (" + ", ".join(defaultPathArray) + " unless specified)",
                     nargs = '*')
+parser.add_argument('--clean-recent',
+                    help = "clean entries not existing in 'files' database from 'recent' database",
+                    action = 'store_true')
 parser.add_argument('--reset-recent',
                     help = "create and save new, empty 'recent' database",
                     action = 'store_true')
@@ -226,7 +229,20 @@ for arg in sys.argv:
             pathArray = defaultPathArray
         filesDB = buildFiles(pathArray)
         saveFiles(filesDB)
-    # build and save recent system database
+    # clean unknown command entries in the 'recent' database
+    elif arg in ['--clean-recent']:
+        filesDB = loadFiles()        
+        recentDB = loadRecent()
+        t0 = time.time()
+        NCleaned = 0        
+        for r in recentDB[-1:0:-1]:                 # Loop in reverse order to prevent concurrent modifications
+            if not r.split()[0] in filesDB:
+                recentDB.remove(r)
+                NCleaned += 1
+        print(str(NCleaned) + " entries removed from 'recent' database")
+        saveRecent(recentDB)
+        print("'recent' database cleaned in " + str(round(time.time() - t0, 3)) + " s")
+    # define clean 'recent' database and save
     elif arg in ['--reset-recent']:
         # define empty, dummy database
         print("creating dummy recent database")
