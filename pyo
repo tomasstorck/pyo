@@ -199,8 +199,11 @@ parser.add_argument('-o',
                     help = "start pyo and commence searching (default)",
                     action = 'store_true')
 parser.add_argument('-u', metavar='PATH',
-                    help = "save contents of specified paths into database (" + ", ".join(defaultPathArray) + " unless specified)",
+                    help = "update 'files' database to index specified paths (" + ", ".join(defaultPathArray) + " unless specified)",
                     nargs = '*')
+parser.add_argument('--reset-recent',
+                    help = "create and save new, empty 'recent' database",
+                    action = 'store_true')
 parserArgs = parser.parse_args()
 
 # However, we walk through sys.argv to maintain the order instead of using the parser
