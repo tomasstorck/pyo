@@ -215,7 +215,8 @@ for arg in sys.argv:
         recentDB = loadRecent()
         echoStr = builddmenu(filesDB, recentDB)
         cmd = calldmenu(echoStr)
-        print("running '" + cmd + "'")
+        if not cmd == "":
+            print("running '" + cmd + "'")
         appendRecentIfNeeded(cmd, recentDB)
 
     # build and save file system database
