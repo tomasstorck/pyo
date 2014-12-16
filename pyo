@@ -211,7 +211,7 @@ parserArgs = parser.parse_args()
 
 # However, we walk through sys.argv to maintain the order instead of using the parser
 for arg in sys.argv:
-    if len(sys.argv) == 1 or arg in ['-o']:
+    if len(sys.argv) == 1 or any([arg in s for s in ['-o']]):
         # Load specified databases
         filesDB = loadFiles()
         # Continue creating dmenu and appending to recent
@@ -221,16 +221,15 @@ for arg in sys.argv:
         if not cmd == "":
             print("running '" + cmd + "'")
         appendRecentIfNeeded(cmd, recentDB)
-
     # build and save file system database
-    elif arg in ['-u']:
+    elif any([arg in s for s in ['-u']]):
         pathArray = parserArgs.u
         if pathArray == []:                         # Use default pathArray if otherwise empty
             pathArray = defaultPathArray
         filesDB = buildFiles(pathArray)
         saveFiles(filesDB)
     # clean unknown command entries in the 'recent' database
-    elif arg in ['--clean-recent']:
+    elif any([arg in s for s in ['--clean-recent']]):
         filesDB = loadFiles()        
         recentDB = loadRecent()
         t0 = time.time()
@@ -243,7 +242,7 @@ for arg in sys.argv:
         saveRecent(recentDB)
         print("'recent' database cleaned in " + str(round(time.time() - t0, 3)) + " s")
     # define clean 'recent' database and save
-    elif arg in ['--reset-recent']:
+    elif any([arg in s for s in ['--reset-recent']]):
         # define empty, dummy database
         print("creating dummy recent database")
         recentDB = []
