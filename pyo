@@ -235,7 +235,7 @@ for arg in sys.argv:
         t0 = time.time()
         NCleaned = 0        
         for r in recentDB[-1:0:-1]:                 # Loop in reverse order to prevent concurrent modifications
-            if not r.split()[0] in filesDB:
+            if not r.split()[0] in filesDB and not r in filesDB:    # Not the first word (command) in filesDB and entry is not a file
                 recentDB.remove(r)
                 NCleaned += 1
         print(str(NCleaned) + " entries removed from 'recent' database")
