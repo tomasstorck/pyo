@@ -18,7 +18,6 @@ def buildFiles(pathArray):
     # Initialise empty database
     filesDB = {}
     print("updating 'files' database...")
-
     for p in pathArray:
         # Walk recursively through files in pathArray, compile database
         for root, dirs, files in os.walk(p, topdown=True):
@@ -36,12 +35,15 @@ def buildFiles(pathArray):
                         filesDB[f] = ['xdg-open', os.path.join(root, f)]
 
     print("updated 'files' database in " + str(round(time.time() - t0, 3)) + " s")
-
     return filesDB
 
 
 def saveFiles(filesDB, DBName='pyoFiles'):
     t0 = time.time()
+    # Create directories if they do not exist
+    if not os.path.isdir(DBDir):
+        os.mkdir(DBDir)
+    # Save database
     with open(DBDir + '/' + DBName + '.pkl', 'wb') as fid:  # w = write, b = binary
         print("saved 'files' database in " + str(round(time.time() - t0, 3)) + " s")
         pickle.dump(filesDB, fid,
@@ -62,6 +64,10 @@ def loadFiles():
 
 def saveRecent(recentDB):
     t0 = time.time()
+    # Create directories if they do not exist
+    if not os.path.isdir(DBDir):
+        os.mkdir(DBDir)
+    # Save database
     with open(DBDir + '/pyoRecent.pkl', 'wb') as fid:  # w = write, b = binary
         pickle.dump(recentDB, fid, pickle.HIGHEST_PROTOCOL)
     print("saved 'recent' database in " + str(round(time.time() - t0, 3)) + " s")
