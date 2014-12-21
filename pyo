@@ -13,31 +13,6 @@ import configparser
 
 ###########
 
-# Load a few commonly used variables
-homeDir = os.path.expanduser('~')
-DBDir = homeDir + "/.cache/pyo"
-defaultPathArray = [homeDir, '/usr/bin']
-
-###########
-
-t0 = time.time()
-# Parse configuration file
-config = configparser.ConfigParser(comment_prefixes=(';',), inline_comment_prefixes=(';',))           # Allow comments using ';'. # is reserved for colours
-if config.read(homeDir + "/.config/pyo/settings") == []:
-    raise FileNotFoundError("Configuration file does not exist, download using e.g. 'wget https://github.com/tomasstorck/pyo/raw/master/settings -O " + homeDir + "/.config/pyo/settings'")
-else:
-    try:
-        dmenu_args      = config['dmenu']['arguments'].splitlines()
-        blacklist_dir   = config['blacklist']['dir'].split()
-        blacklist_file  = config['blacklist']['file'].split()
-        Nrecent         = int(config['other']['Nrecent'])
-        # TODO: throw warning when unused settings are defined
-        print("read configuration file in " + str(round(time.time() - t0, 3)) + " s")
-    except KeyError as e:
-        raise KeyError("Missing key or section '" + " ".join(e.args) + "' in configuration file")
-
-###########
-
 def buildFiles(pathArray):
     t0 = time.time()
     # Initialise empty database
@@ -65,8 +40,6 @@ def buildFiles(pathArray):
     return filesDB
 
 
-###########
-
 def saveFiles(filesDB, DBName='pyoFiles'):
     t0 = time.time()
     with open(DBDir + '/' + DBName + '.pkl', 'wb') as fid:  # w = write, b = binary
@@ -74,8 +47,6 @@ def saveFiles(filesDB, DBName='pyoFiles'):
         pickle.dump(filesDB, fid,
                     pickle.HIGHEST_PROTOCOL)  # Python 3 will choose whether to use pure Python pickle or cPickle
 
-
-###########
 
 def loadFiles():
     t0 = time.time()
@@ -89,16 +60,12 @@ def loadFiles():
     return filesDB
 
 
-###########
-
 def saveRecent(recentDB):
     t0 = time.time()
     with open(DBDir + '/pyoRecent.pkl', 'wb') as fid:  # w = write, b = binary
         pickle.dump(recentDB, fid, pickle.HIGHEST_PROTOCOL)
     print("saved 'recent' database in " + str(round(time.time() - t0, 3)) + " s")
 
-
-###########
 
 def loadRecent():
     t0 = time.time()
@@ -111,8 +78,6 @@ def loadRecent():
     print("loaded 'recent' database in " + str(round(time.time() - t0, 3)) + " s")
     return recentDB
 
-
-###########
 
 def appendRecentIfNeeded(cmd, recentDB):
     t0 = time.time()
@@ -135,9 +100,7 @@ def appendRecentIfNeeded(cmd, recentDB):
         print("updated 'recent' database in " + str(round(time.time() - t0, 3)) + " s")
         saveRecent(recentDB)
     
-
-###########
-
+    
 def builddmenu(filesDB, recentDB=['']):
     t0 = time.time()
 
@@ -156,8 +119,6 @@ def builddmenu(filesDB, recentDB=['']):
 
     return echoStr
 
-
-###########
 
 def calldmenu(echoStr):
     # Communicate with dmenu through the shell
@@ -189,8 +150,71 @@ def calldmenu(echoStr):
         # Now execute the processed command
         subprocess.Popen(cmdArrayProc, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return cmd
+    
+def resetConfig():
+    if not os.path.isdir(configDir):
+        os.mkdir(configDir)
+    with open(configPath,'w') as file:
+        file.write("""; Note that arguments requires one argument per line, so as to allow whitespaces in arguments
+\n[dmenu]
+arguments = -b              ; Show dmenu at the bottom of the screen
+            -i              ; Ignore case to match files/programs
+            -p              ; Text to show as prompt
+            command:        
+            -nb             ; Non-selection items, background colour
+            #111111         
+            -nf             ; Non-selection items, foreground colour
+            #aaaaaa         
+            -sb             ; Selection, background colour
+            #aa5533         
+            -sf             ; Selection, foreground colour
+            #cccccc         
+            -l              ; Length of list to show, in number of lines
+            10              
+            -fn
+            -monotype-courier new-medium-r-normal-*-12-*-*-*-*-*-*-*
+                            ; Font to use, use xfontsel to build this string
+\n[blacklist]
+dir = . git                 ; Directory names containing anything from this list will not be searched through for files database
+file = ~ .h .c .cpp         ; File names containing anything from this list OR start with . will not be searched through for filesDB
+\n[other]
+Nrecent = 50                ; Number of recent items to remember""")
 
-######################
+
+def parseConfig():
+    # Parse configuration file
+    configParser = configparser.ConfigParser(comment_prefixes=(';',), inline_comment_prefixes=(';',))           # Allow comments using ';'. # is reserved for colours    
+    configReadReturn = configParser.read(configPath)    
+    if configReadReturn == []:
+        return None
+    else:
+        return configParser
+
+###########
+
+# Load a few commonly used variables
+homeDir = os.path.expanduser("~")
+DBDir = homeDir + "/.cache/pyo"
+defaultPathArray = [homeDir, "/usr/bin"]
+configDir = homeDir + "/.config/pyo"
+configPath = configDir + "/settings" 
+
+t0 = time.time()
+# Parse configuration file
+config = parseConfig()
+if config == None:
+    print("configuration file does not exist, writing defaults to " + configPath)
+    resetConfig()
+    config = parseConfig()
+try:
+    dmenu_args      = config['dmenu']['arguments'].splitlines()
+    blacklist_dir   = config['blacklist']['dir'].split()
+    blacklist_file  = config['blacklist']['file'].split()
+    Nrecent         = int(config['other']['Nrecent'])
+    # TODO: throw warning when unused settings are defined
+    print("read configuration file in " + str(round(time.time() - t0, 3)) + " s")
+except KeyError as e:
+    raise KeyError("Missing key or section '" + " ".join(e.args) + "' in configuration file, consider using --reset-configuration")
 
 # Analyse input arguments
 parser = argparse.ArgumentParser(description="Search for and open a file or program using dmenu", 
@@ -206,6 +230,9 @@ parser.add_argument('--clean-recent',
                     action = 'store_true')
 parser.add_argument('--reset-recent',
                     help = "create and save new, empty 'recent' database",
+                    action = 'store_true')
+parser.add_argument('--reset-configuration',
+                    help = "create and save new, default configuration file",
                     action = 'store_true')
 parserArgs = parser.parse_args()
 
@@ -247,3 +274,8 @@ for arg in sys.argv:
         print("creating dummy recent database")
         recentDB = []
         saveRecent(recentDB)
+    # reset configuration file to defaults
+    elif any([arg in s for s in ['--reset-configuration']]):
+        # define default database
+        print("writing default configuration file to " + configPath)
+        resetConfig()
