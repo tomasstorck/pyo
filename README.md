@@ -2,7 +2,7 @@
 # Introduction and motivation #
 ##############
 Much like Synapse, Gnome Do, Launchy and some other software, this program allows you to quickly open another piece of software or file on your machine by filtering out the matching items as you type.
-However, while most other launchers sport great extra features, such as maintaining a daemon process in the background, plugins allowing integration with tools like Zeigeist and showing icons of matching items, the aim of this work is to keep it as simple as possible. pyo (PYthon Open) maintains a database with your programs and files and a database with recently selected items, then presents these using `dmenu` (http://tools.suckless.org/dmenu/).
+However, while most other launchers sport great extra features, such as maintaining a daemon process in the background, plugins allowing integration with tools like Zeigeist and showing icons of matching items, the aim of this work is to keep it as simple as possible. `pyo` (PYthon Open) maintains a database with your programs and files and a database with recently selected items, then presents these using `dmenu` (http://tools.suckless.org/dmenu/).
 
 #####################
 # Quick start guide #
@@ -15,11 +15,11 @@ Besides these dependencies, only the file `pyo` is required to run the program. 
 
 To summon and use `pyo`, you'll need to bind it to a shortcut that is globally available. How to add a shortcut key depends on your window manager/desktop environment. Some examples are given below.
 
-* COMPIZ: Run `ccsm`, go to Commands and add a command line for pyo. Under the tab Key Bindings, add a shortcut key.
+* COMPIZ: Run `ccsm`, go to Commands and add a command line for `pyo`. Under the tab Key Bindings, add a shortcut key.
 
 * LXQT:   Open the global key configuration screen (e.g., run `lxqt-config-globalkeyshortcuts` in the terminal). The type you are looking for is Command, not DBus
 
-The command you want to bind a shortcut key to depends on you. For example, I do a database update after pyo finishes opening a file, by using:
+The command you want to bind a shortcut key to depends on you. For example, I do a database update after `pyo` finishes opening a file, by using:
 
     pyo -o -u
 
