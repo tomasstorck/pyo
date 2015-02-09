@@ -13,6 +13,9 @@ import configparser
 
 ###########
 
+def isExecutable(path):
+    return os.path.isfile(path) and os.access(path, os.X_OK)
+
 def buildFiles(pathArray):
     t0 = time.time()
     # Initialise empty database
@@ -28,11 +31,7 @@ def buildFiles(pathArray):
             # Loop through these files and append if interesting (does not start with . and is not in blacklist)
             for f in files[:]:
                 if not f[0] == '.' and not any(bl in f for bl in blacklist_file):
-                    # See if file is executable. Store as script if so, as file otherwise (using xdg-open)
-                    if os.access(os.path.join(root, f), os.X_OK):
-                        filesDB[f] = [os.path.join(root, f)]
-                    else:
-                        filesDB[f] = ['xdg-open', os.path.join(root, f)]
+                    filesDB[f] = os.path.join(root, f)
 
     print("updated 'files' database in " + str(round(time.time() - t0, 3)) + " s")
     return filesDB
@@ -140,19 +139,22 @@ def calldmenu(echoStr):
     # Work through command returned by dmenu
     if cmd == '':
         print("Stopped without command")
-    elif cmd in filesDB:
-        subprocess.Popen(filesDB[cmd], stdin=None, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     else:
         # Convert command to an array
         cmdArray = cmd.split(' ')
         cmdArrayProc = []  # copy cmdArray so we can make the changes in there
-        # Find out if there is a key in the given command. No worries if not, then it's just an argument
-        for i in range(len(cmdArray)):
-            c = cmdArray[i]
+        for ii in reversed(range(len(cmdArray))):       # ii = right index. Start with longest possible command
+            # Find where the key is a filesDB key in the given command
+            c = ' '.join(cmdArray[:ii+1])               # +1 because i = [len(), len()-1, ..., 1, 0]. Only with len()+1 we get all of cmdArray
             if c in filesDB:
-                cmdArrayProc.append(*filesDB[c])
-            else:
-                cmdArrayProc.append(c)
+                if not isExecutable(filesDB[c]):
+                    cmdArrayProc.append('xdg-open')
+                cmdArrayProc.append(filesDB[c])
+                # Now add the remaining elements of cmdArray as arguments, then exit for loop
+                cmdArrayProc.extend(cmdArray[ii+1:])
+                break
+        else:                                           # No entry found for cmd in filesDB. Execute anyway, might be a terminal command
+            cmdArrayProc = cmdArray
         # Now execute the processed command
         subprocess.Popen(cmdArrayProc, stdin=None, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return cmd
