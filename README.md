@@ -16,9 +16,9 @@ Besides these dependencies, only the file `pyo` is required to run the program. 
 
 To summon and use `pyo`, you'll need to bind it to a shortcut that is globally available. How to add a shortcut key depends on your window manager/desktop environment. Some examples are given below.
 
-* GNOME:  See https://help.gnome.org/users/gnome-help/stable/keyboard-shortcuts-set.html.en
-* KDE:    See https://userbase.kde.org/System_Settings/Shortcuts_and_Gestures
-* LXQT:   Open the global key configuration screen (e.g., run `lxqt-config-globalkeyshortcuts` in the terminal). The type you are looking for is Command, not DBus
+* GNOME Shell:  See https://help.gnome.org/users/gnome-help/stable/keyboard-shortcuts-set.html.en
+* KDE:          See https://userbase.kde.org/System_Settings/Shortcuts_and_Gestures
+* LXQT:         Open the global key configuration screen (e.g., run `lxqt-config-globalkeyshortcuts` in the terminal). The type you are looking for is Command, not DBus
 * COMPIZ: Run `ccsm`, go to Commands and add a command line for `pyo`. Under the tab Key Bindings, add a shortcut key.
 
 The command you want to bind a shortcut key to depends on you. For example, I do a database update *after* `pyo` finishes opening a file, by using:
