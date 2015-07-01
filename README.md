@@ -29,12 +29,19 @@ The command you want to bind a shortcut key to depends on you. For example, I do
 # FAQ #
 #######
 **Why does everything open in Firefox?**
+
 This is a known oddity in `xdg-open`. Add `export DE=gnome` to your `~/.xinitrc` to fix this, even if you don't use GNOME.
+
 **How can I start a program with arguments?**
+
 Press `TAB` to fill in the selected item, add your extra arguments and press `SHIFT-ENTER`. For example, to use interactive mode for `gnome-screenshot`, type `screens`, press `TAB`, type ` -i` and press `SHIFT-ENTER` to execute this line as it is written. See the man files for dmenu for more information (http://man.cx/dmenu).
+
 **Why does nothing happen?/Why is pyo so slow?**
+
 Run `pyo` in a terminal to evaluate speed bottlenecks or error messages
+
 **How can I change the looks of the program?**
+
 pyo is quite customisable: most settings can be changed by editing `~/.config/pyo/settings`
 
 ###########
