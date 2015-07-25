@@ -189,8 +189,19 @@ arguments = -b              ; Show dmenu at the bottom of the screen
             -monotype-courier new-medium-r-normal-*-12-*-*-*-*-*-*-*
                             ; Font to use, use xfontsel to build this string
 \n[blacklist]
-dir = . git                 ; Directory names containing anything from this list will not be searched through for files database
+dir = . git cache           ; Directory names containing anything from this list will not be searched through for files database
 file = ~ .h .c .cpp         ; File names containing anything from this list OR start with . will not be searched through for filesDB
+\n[whitelist]
+file =  .doc .docx .ppt .pptx  .xls .xlsx                       ; Microsoft Office documents
+        .ods .odt                                               ; LibreOffice/OpenOffice/etc. documents
+        .blender .csv .m .pdf .tex .txt                         ; Other documents 
+        .desktop                                                ; Launchers
+        .log                                                    ; Log files
+        .conf .cfg                                              ; Configuration files
+        .sh .py                                                 ; Scripts
+        .avi .mp3 .mp4 .mpg .wma .wmv                           ; Audio and video
+        .eps .jpg .jpeg .png .psd .svg .tif .tiff               ; Images 
+        .7zip .gz .tar .rar .zip                                ; Archives
 \n[other]
 Nrecent = 50                ; Number of recent items to remember""")
 
