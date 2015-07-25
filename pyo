@@ -22,16 +22,22 @@ def buildFiles(pathArray):
     filesDB = {}
     print("updating 'files' database...")
     for p in pathArray:
-        # Walk recursively through files in pathArray, compile database
+        print(p)
+        # Walk recursively through directories and files in pathArray, compile database
         for root, dirs, files in os.walk(p, topdown=True):
             # Filter out the unwanted directories
             for d in dirs[:]:  # dirs[:] to make a copy of dirs
                 if any(bl in d for bl in blacklist_dir):
                     dirs.remove(d)
-            # Loop through these files and append if interesting (does not start with . and is not in blacklist)
+            # Loop through the files in filtered dirs and append if interesting (does not start with ., is not in blacklist, is in whitelist)
             for f in files[:]:
-                if not f[0] == '.' and not any(bl in f for bl in blacklist_file):
-                    filesDB[f] = os.path.join(root, f)
+                if (f[0] == '.'):
+                    continue
+                if any(bl in f for bl in blacklist_file):
+                    continue
+                if (not any(wl in f for wl in whitelist_file)) and (not os.path.splitext(f)[-1]==""):
+                    continue
+                filesDB[f] = os.path.join(root, f)
 
     print("updated 'files' database in " + str(round(time.time() - t0, 3)) + " s")
     return filesDB
@@ -218,6 +224,7 @@ try:
     dmenu_args      = config['dmenu']['arguments'].splitlines()
     blacklist_dir   = config['blacklist']['dir'].split()
     blacklist_file  = config['blacklist']['file'].split()
+    whitelist_file  = config['whitelist']['file'].split()
     Nrecent         = int(config['other']['Nrecent'])
     # TODO: throw warning when unused settings are defined
     print("read configuration file in " + str(round(time.time() - t0, 3)) + " s")
@@ -231,7 +238,7 @@ parser.add_argument('-o',
                     help = "start pyo and commence searching (default)",
                     action = 'store_true')
 parser.add_argument('-u', metavar='PATH',
-                    help = "update 'files' database to index specified paths (" + ", ".join(defaultPathArray) + " unless specified)",
+                    help = "update 'files' database to index specified paths (" + " ".join(defaultPathArray) + " unless specified)",
                     nargs = '*')
 parser.add_argument('--clean-recent',
                     help = "clean entries not existing in 'files' database from 'recent' database",
